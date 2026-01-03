@@ -1,10 +1,600 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sujiro Brutal Delivery</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF4500', // Laranja Sujiro
+                        bg: '#f0f0eb',      // Off-white Papel Jornal
+                        accent: '#FFD700',  // Amarelo
+                        success: '#00E676',
+                        black: '#050505',
+                        white: '#ffffff',
+                    },
+                    fontFamily: {
+                        display: ['Archivo Black', 'sans-serif'],
+                        body: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'hard': '5px 5px 0px 0px #050505',
+                        'hard-sm': '3px 3px 0px 0px #050505',
+                        'hard-hover': '7px 7px 0px 0px #050505',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Import Map for React modules -->
+    <script type="importmap">
+        {
+          "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+          }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+            animation: marquee 15s linear infinite;
+        }
+
+        /* Base styles */
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
 </head>
-<body>
-$END$
+<body class="bg-bg text-black font-body overflow-x-hidden antialiased">
+<div id="root"></div>
+
+<script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { ShoppingBag, Search, Home, Receipt, ArrowLeft, Phone, CheckCircle, X, Plus, Minus, Trash2 } from 'lucide-react';
+
+    // --- CONSTANTS & DATA ---
+
+    const DB = [
+        // Promos
+        { id: 101, name: "Combo Casal", desc: "1 Pizza Grande (2 sabores) + 1 Refri 2L.", price: 89.90, cat: "promocao", img: "https://images.unsplash.com/photo-1595854341625-f33ee1043138?w=800&q=80", badge: "TOP" },
+        { id: 102, name: "Smash Duplo + Refri", desc: "2 Smash Burgers + 2 Latas.", price: 55.00, cat: "promocao", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=800&q=80" },
+        // Pizzas
+        { id: 1, name: "Calabresa Premium", desc: "Mussarela, calabresa artesanal defumada, cebola roxa e azeitonas.", price: 49.90, cat: "pizza", img: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80" },
+        { id: 2, name: "Frango c/ Catupiry", desc: "Frango desfiado temperado e o verdadeiro Catupiry original.", price: 54.90, cat: "pizza", img: "https://images.unsplash.com/photo-1571407970349-bc1671676f08?w=800&q=80" },
+        { id: 3, name: "Portuguesa Brutal", desc: "Presunto, ovos, cebola, ervilha, mussarela e azeitona preta.", price: 52.00, cat: "pizza", img: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80" },
+        { id: 4, name: "4 Queijos", desc: "Mussarela, provolone, parmesão e gorgonzola.", price: 58.00, cat: "pizza", img: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&q=80" },
+        { id: 5, name: "Chocolate c/ Morango", desc: "Chocolate ao leite derretido com morangos frescos.", price: 45.00, cat: "pizza", img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80", badge: "DOCE" },
+        // Burgers
+        { id: 10, name: "X-Bacon Sujiro", desc: "Blend 160g, muito bacon, cheddar e maionese da casa.", price: 32.00, cat: "burger", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80" },
+        { id: 11, name: "Salada Burger", desc: "Blend 160g, alface americana, tomate, queijo prato.", price: 28.00, cat: "burger", img: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=80" },
+        // Entradas
+        { id: 20, name: "Batata Frita Rustica", desc: "Batatas cortadas a mão com alho e alecrim.", price: 22.00, cat: "entrada", img: "https://images.unsplash.com/photo-1630384060421-a4323ceca5f6?w=800&q=80" },
+        { id: 21, name: "Nuggets (10un)", desc: "Crocantes por fora, macios por dentro. Acompanha molho barbecue.", price: 18.00, cat: "entrada", img: "https://images.unsplash.com/photo-1562967914-608f82629710?w=800&q=80" },
+        // Bebidas
+        { id: 30, name: "Coca-Cola 2L", desc: "Garrafa família.", price: 14.00, cat: "bebida", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=800&q=80" },
+        { id: 31, name: "Coca-Cola Lata", desc: "350ml gelada.", price: 6.00, cat: "bebida", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=800&q=80" },
+        { id: 32, name: "Guaraná Ant. 1.5L", desc: "O original do Brasil.", price: 11.00, cat: "bebida", img: "https://images.unsplash.com/photo-1621460245239-652a22216694?w=800&q=80" }
+    ];
+
+    const INITIAL_ORDERS = [
+        { id: 952, date: "02/01/2026", items: "1x Calabresa Premium, 1x Coca-Cola 2L", total: 63.90, status: "Entregue" },
+        { id: 820, date: "20/12/2025", items: "2x X-Bacon Sujiro", total: 64.00, status: "Entregue" }
+    ];
+
+    // --- COMPONENTS ---
+
+    // 1. Landing Page
+    const LandingPage = ({ onEnter }) => {
+        return (
+            <div className="fixed inset-0 z-50 flex flex-col bg-primary text-black">
+                {/* Marquee Top */}
+                <div className="bg-black text-white overflow-hidden py-2 border-b-2 border-white">
+                    <div className="whitespace-nowrap animate-marquee font-display uppercase tracking-widest text-sm">
+                        PIZZA BRUTAL • DELIVERY RÁPIDO • PIZZA BRUTAL • DELIVERY RÁPIDO • PIZZA BRUTAL • DELIVERY RÁPIDO • PIZZA BRUTAL • DELIVERY RÁPIDO
+                    </div>
+                </div>
+
+                <div className="flex-1 flex flex-col justify-center items-center p-6 relative">
+                    {/* Decorative Elements */}
+                    <div className="absolute top-20 left-10 w-8 h-8 bg-accent border-2 border-black rotate-12"></div>
+                    <div className="absolute bottom-40 right-10 w-12 h-12 bg-white border-2 border-black -rotate-6 rounded-full"></div>
+
+                    <div className="relative mb-8 group">
+                        <div className="absolute inset-0 bg-black translate-x-3 translate-y-3 border-2 border-white"></div>
+                        <div className="relative w-48 h-48 bg-white border-4 border-black flex items-center justify-center p-4 hover:-translate-y-1 transition-transform duration-200">
+                            {/* LOGO */}
+                            <img src="img_2.png" alt="Sujiro Logo" className="w-full h-full object-contain" />
+                        </div>
+                    </div>
+
+                    <h1 className="text-5xl font-display leading-[0.9] text-center mb-6 drop-shadow-[4px_4px_0_#fff]">
+                        PIZZA<br/>BRUTAL.
+                    </h1>
+
+                    <div className="bg-black text-white px-4 py-2 font-bold -rotate-2 border-2 border-white shadow-hard-sm">
+                        CEILÂNDIA  & REGIÃO
+                    </div>
+                </div>
+
+                <div className="bg-white p-8 border-t-4 border-black">
+                    <button
+                        onClick={onEnter}
+                        className="w-full bg-black text-white border-4 border-black p-4 font-display text-xl uppercase shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 hover:bg-accent hover:text-black"
+                    >
+                        Abrir Cardápio <ShoppingBag size={24} />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // 2. Product Modal
+    const ProductModal = ({ product, isOpen, onClose, onAdd }) => {
+        const [qty, setQty] = useState(1);
+        const [obs, setObs] = useState('');
+
+        useEffect(() => {
+            if (isOpen) {
+                setQty(1);
+                setObs('');
+            }
+        }, [isOpen]);
+
+        if (!isOpen || !product) return null;
+
+        return (
+            <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+                <div
+                    className="w-full sm:max-w-md bg-white border-t-4 sm:border-4 border-black flex flex-col max-h-[90vh] shadow-2xl animate-in slide-in-from-bottom duration-300"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="h-48 relative border-b-4 border-black shrink-0">
+                        <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 w-10 h-10 bg-black text-white border-2 border-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-hard-sm"
+                        >
+                            <X size={20} strokeWidth={3} />
+                        </button>
+                    </div>
+
+                    <div className="p-6 overflow-y-auto">
+                        <div className="flex justify-between items-start gap-4 mb-4">
+                            <h2 className="text-2xl font-display leading-none">{product.name}</h2>
+                            <span className="bg-accent px-2 py-1 border-2 border-black font-bold whitespace-nowrap shadow-sm">
+                                    R$ {product.price.toFixed(2).replace('.', ',')}
+                                </span>
+                        </div>
+                        <p className="text-gray-600 text-sm mb-6 font-body leading-tight">{product.desc}</p>
+
+                        <label className="block font-bold text-sm mb-2 uppercase">Observações:</label>
+                        <textarea
+                            className="w-full bg-white border-2 border-black p-3 font-body focus:shadow-hard-sm focus:outline-none focus:border-primary transition-all rounded-none mb-4"
+                            rows={2}
+                            placeholder="Ex: Tirar cebola, maionese à parte..."
+                            value={obs}
+                            onChange={(e) => setObs(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="p-4 bg-bg border-t-4 border-black mt-auto flex gap-4 shrink-0">
+                        <div className="flex items-center bg-white border-2 border-black font-bold h-14">
+                            <button onClick={() => setQty(Math.max(1, qty - 1))} className="px-4 h-full hover:bg-gray-100 active:bg-gray-200 border-r-2 border-black"><Minus size={16} /></button>
+                            <span className="w-10 text-center text-lg">{qty}</span>
+                            <button onClick={() => setQty(qty + 1)} className="px-4 h-full hover:bg-gray-100 active:bg-gray-200 border-l-2 border-black"><Plus size={16} /></button>
+                        </div>
+                        <button
+                            onClick={() => onAdd(product, qty, obs)}
+                            className="flex-1 bg-black text-white border-2 border-black font-display uppercase tracking-wide hover:bg-primary hover:text-black hover:border-black transition-colors shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none"
+                        >
+                            Adicionar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // 3. Checkout Component
+    const CheckoutView = ({ cart, total, onRemove, onSubmit }) => {
+        const [name, setName] = useState('');
+        const [address, setAddress] = useState('');
+        const [payment, setPayment] = useState('Pix');
+        const [change, setChange] = useState('');
+
+        if (cart.length === 0) {
+            return <div className="text-center mt-20 font-display opacity-50">Seu carrinho está vazio.</div>;
+        }
+
+        return (
+            <div className="pb-20 animate-in slide-in-from-right duration-300">
+                <h2 className="font-display text-xl mb-4">Seu Pedido</h2>
+                <div className="bg-white border-2 border-black mb-8 shadow-hard">
+                    {cart.map((item, idx) => (
+                        <div key={idx} className="p-4 border-b-2 border-black/10 last:border-0 flex justify-between items-start">
+                            <div>
+                                <div className="font-bold text-sm">{item.qty}x {item.name}</div>
+                                {item.obs && <div className="text-xs text-gray-500 mt-1">Obs: {item.obs}</div>}
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="font-bold">R$ {(item.price * item.qty).toFixed(2).replace('.', ',')}</span>
+                                <button onClick={() => onRemove(idx)} className="text-red-500 hover:text-red-700">
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    <div className="p-4 bg-bg border-t-2 border-black flex justify-between items-center font-display text-lg">
+                        <span>TOTAL</span>
+                        <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+
+                <h3 className="font-display text-sm mb-2 uppercase">Dados de Entrega</h3>
+                <div className="grid gap-3 mb-8">
+                    <input
+                        type="text" placeholder="Seu Nome"
+                        className="w-full bg-white border-2 border-black p-3 font-body focus:shadow-hard-sm focus:outline-none focus:border-primary"
+                        value={name} onChange={e => setName(e.target.value)}
+                    />
+                    <input
+                        type="text" placeholder="Endereço Completo (Rua, Nº, Bairro)"
+                        className="w-full bg-white border-2 border-black p-3 font-body focus:shadow-hard-sm focus:outline-none focus:border-primary"
+                        value={address} onChange={e => setAddress(e.target.value)}
+                    />
+                </div>
+
+                <h3 className="font-display text-sm mb-2 uppercase">Pagamento</h3>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                    {['Pix', 'Cartão', 'Dinheiro'].map(method => (
+                        <button
+                            key={method}
+                            onClick={() => setPayment(method)}
+                            className={`p-2 border-2 border-black text-sm font-bold uppercase transition-all ${payment === method ? 'bg-black text-white shadow-none translate-x-1 translate-y-1' : 'bg-white shadow-hard-sm'}`}
+                        >
+                            {method}
+                        </button>
+                    ))}
+                </div>
+
+                {payment === 'Dinheiro' && (
+                    <div className="mb-8 animate-in fade-in">
+                        <input
+                            type="number" placeholder="Troco para quanto? (ex: 50)"
+                            className="w-full bg-white border-2 border-black p-3 font-body focus:shadow-hard-sm focus:outline-none focus:border-primary"
+                            value={change} onChange={e => setChange(e.target.value)}
+                        />
+                    </div>
+                )}
+
+                <button
+                    onClick={() => {
+                        if (!name || !address) return alert('Preencha os dados de entrega');
+                        onSubmit(name, address, payment, change);
+                    }}
+                    className="w-full bg-[#25D366] text-white border-2 border-black p-4 font-display text-lg uppercase shadow-hard active:translate-x-1 active:translate-y-1 active:shadow-none flex items-center justify-center gap-2 hover:brightness-110 transition-all"
+                >
+                    Enviar Pedido <Phone size={24} />
+                </button>
+            </div>
+        );
+    };
+
+    // 4. Main App
+    const App = () => {
+        const [view, setView] = useState('landing'); // landing, home, search, orders, checkout
+        const [cart, setCart] = useState([]);
+        const [orders, setOrders] = useState(INITIAL_ORDERS);
+        const [selectedProduct, setSelectedProduct] = useState(null);
+        const [isModalOpen, setIsModalOpen] = useState(false);
+        const [searchTerm, setSearchTerm] = useState('');
+        const [activeCategory, setActiveCategory] = useState('all');
+        const [showToast, setShowToast] = useState(false);
+
+        // Logic
+        const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
+
+        const categories = [
+            { id: 'all', label: 'TUDO' },
+            { id: 'promocao', label: 'PROMO' },
+            { id: 'pizza', label: 'PIZZAS' },
+            { id: 'burger', label: 'BURGERS' },
+            { id: 'entrada', label: 'ENTRADAS' },
+            { id: 'bebida', label: 'BEBIDAS' },
+        ];
+
+        const filteredProducts = activeCategory === 'all'
+            ? DB
+            : DB.filter(p => p.cat === activeCategory);
+
+        const searchResults = searchTerm.length >= 2
+            ? DB.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.desc.toLowerCase().includes(searchTerm.toLowerCase()))
+            : [];
+
+        const addToCart = (product, qty, obs) => {
+            setCart(prev => {
+                const existing = prev.find(i => i.id === product.id && i.obs === obs);
+                if (existing) {
+                    return prev.map(i => i === existing ? { ...i, qty: i.qty + qty } : i);
+                }
+                return [...prev, { ...product, qty, obs }];
+            });
+            setIsModalOpen(false);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 2000);
+        };
+
+        const removeFromCart = (index) => {
+            setCart(prev => prev.filter((_, i) => i !== index));
+        };
+
+        const handleCheckout = (name, address, method, change) => {
+            const total = cartTotal;
+            let msg = `*NOVO PEDIDO - SUJIRO*\n`;
+            msg += `👤 *Cliente:* ${name}\n`;
+            msg += `📍 *Local:* ${address}\n`;
+            msg += `💰 *Pagamento:* ${method}\n`;
+            if (method === 'Dinheiro' && change) msg += `💵 *Troco para:* R$ ${change}\n`;
+            msg += `\n*ITENS:*\n`;
+            cart.forEach(item => {
+                msg += `${item.qty}x ${item.name} (R$ ${(item.price * item.qty).toFixed(2)})\n`;
+                if(item.obs) msg += `   _Obs: ${item.obs}_\n`;
+            });
+            msg += `\n*TOTAL: R$ ${total.toFixed(2)}*`;
+
+            setOrders(prev => [{
+                id: Math.floor(Math.random() * 1000),
+                date: new Date().toLocaleDateString('pt-BR'),
+                items: `${cart.length} itens`,
+                total: total,
+                status: 'Aguardando'
+            }, ...prev]);
+
+            setCart([]);
+            setView('orders');
+            window.open(`https://wa.me/5561999999999?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        if (view === 'landing') {
+            return <LandingPage onEnter={() => setView('home')} />;
+        }
+
+        return (
+            <div className="min-h-screen pb-20">
+
+                {/* HEADER */}
+                <header className="fixed top-0 left-0 w-full bg-white border-b-2 border-black z-40 h-[70px] flex items-center justify-between px-4 shadow-sm">
+                    {view === 'checkout' || view === 'search' ? (
+                        <button onClick={() => setView('home')} className="flex items-center gap-2 font-display uppercase text-sm hover:text-primary transition-colors">
+                            <ArrowLeft size={20} /> Voltar
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary border-2 border-black shadow-hard-sm p-1 flex items-center justify-center">
+                                <img src="img_2.png" alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                            <h1 className="font-display text-xl leading-none pt-1">SUJIRO</h1>
+                        </div>
+                    )}
+
+                    {view === 'home' && (
+                        <button onClick={() => setView('search')} className="p-2 border-2 border-transparent hover:border-black rounded transition-all">
+                            <Search size={24} />
+                        </button>
+                    )}
+                </header>
+
+                {/* MAIN CONTENT */}
+                <main className="pt-[90px] px-4 min-h-[calc(100vh-80px)]">
+
+                    {/* VIEW: HOME */}
+                    {view === 'home' && (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {/* Ticker Tape */}
+                            <div className="mb-6 bg-accent border-2 border-black overflow-hidden py-1 shadow-hard-sm">
+                                <div className="animate-marquee whitespace-nowrap font-bold text-xs uppercase flex gap-8">
+                                    <span>🛵 Entrega Grátis acima de R$ 60</span>
+                                    <span>🔥 Promoção Combo Casal</span>
+                                    <span>🍔 Burgers Artesanais</span>
+                                    <span>🛵 Entrega Grátis acima de R$ 60</span>
+                                    <span>🔥 Promoção Combo Casal</span>
+                                </div>
+                            </div>
+
+                            {/* Categories */}
+                            <div className="sticky top-[72px] z-30 bg-bg pb-2 -mx-4 px-4 overflow-x-auto no-scrollbar flex gap-2 mb-4 border-b-2 border-black/10">
+                                {categories.map(cat => (
+                                    <button
+                                        key={cat.id}
+                                        onClick={() => setActiveCategory(cat.id)}
+                                        className={`px-4 py-2 border-2 border-black font-display text-sm uppercase whitespace-nowrap transition-all shadow-hard-sm active:translate-y-1 active:shadow-none ${activeCategory === cat.id ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Product List */}
+                            <div className="grid gap-4 pb-20">
+                                {filteredProducts.map(product => (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
+                                        className="bg-white border-2 border-black shadow-hard flex cursor-pointer active:scale-[0.98] transition-transform"
+                                    >
+                                        <div className="w-28 h-28 border-r-2 border-black relative shrink-0">
+                                            <img src={product.img} alt={product.name} className="w-full h-full object-cover" loading="lazy" />
+                                            {product.badge && <span className="absolute top-0 left-0 bg-primary text-black border-r-2 border-b-2 border-black px-2 py-0.5 text-xs font-bold">{product.badge}</span>}
+                                        </div>
+                                        <div className="p-3 flex-1 flex flex-col justify-between">
+                                            <div>
+                                                <h3 className="font-display leading-tight mb-1">{product.name}</h3>
+                                                <p className="text-xs text-gray-500 line-clamp-2 leading-tight">{product.desc}</p>
+                                            </div>
+                                            <div className="flex justify-between items-end mt-2">
+                                                <span className="bg-black text-white px-2 py-0.5 text-sm font-bold">R$ {product.price.toFixed(2).replace('.', ',')}</span>
+                                                <div className="w-8 h-8 bg-primary border-2 border-black flex items-center justify-center shadow-sm">
+                                                    <Plus size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VIEW: SEARCH */}
+                    {view === 'search' && (
+                        <div className="animate-in fade-in duration-300">
+                            <input
+                                autoFocus
+                                type="text"
+                                placeholder="O que você procura hoje?"
+                                className="w-full bg-white border-2 border-black p-4 font-body text-lg shadow-hard focus:outline-none focus:border-primary mb-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+
+                            <div className="grid gap-4">
+                                {searchResults.length === 0 && searchTerm.length > 1 && (
+                                    <div className="text-center opacity-50 font-display mt-10">Nenhum resultado brutal encontrado.</div>
+                                )}
+                                {searchResults.map(product => (
+                                    <div
+                                        key={product.id}
+                                        onClick={() => { setSelectedProduct(product); setIsModalOpen(true); }}
+                                        className="bg-white border-2 border-black shadow-hard flex cursor-pointer"
+                                    >
+                                        <div className="w-20 h-20 border-r-2 border-black shrink-0">
+                                            <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="p-3 flex-1 flex justify-between items-center">
+                                            <h3 className="font-display text-sm">{product.name}</h3>
+                                            <span className="font-bold">R$ {product.price.toFixed(2).replace('.', ',')}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VIEW: ORDERS */}
+                    {view === 'orders' && (
+                        <div className="animate-in slide-in-from-right duration-300">
+                            <h2 className="font-display text-2xl mb-6">Meus Pedidos</h2>
+                            <div className="grid gap-4">
+                                {orders.map(order => (
+                                    <div key={order.id} className="bg-white border-2 border-black p-4 shadow-hard">
+                                        <div className="flex justify-between items-start mb-2 border-b-2 border-black/10 pb-2">
+                                            <span className="font-bold">#{order.id}</span>
+                                            <span className="text-sm text-gray-500">{order.date}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-4">{order.items}</p>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-display text-lg">R$ {order.total.toFixed(2).replace('.', ',')}</span>
+                                            <span className={`px-2 py-1 border-2 border-black text-xs font-bold uppercase ${order.status === 'Entregue' ? 'bg-success text-white' : 'bg-accent'}`}>
+                                                    {order.status}
+                                                </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VIEW: CHECKOUT */}
+                    {view === 'checkout' && (
+                        <CheckoutView cart={cart} total={cartTotal} onRemove={removeFromCart} onSubmit={handleCheckout} />
+                    )}
+                </main>
+
+                {/* FLOATING CART */}
+                {view !== 'checkout' && view !== 'landing' && cartCount > 0 && (
+                    <div className="fixed bottom-24 left-4 right-4 z-40 animate-in slide-in-from-bottom duration-300">
+                        <button
+                            onClick={() => setView('checkout')}
+                            className="w-full bg-black text-white border-2 border-white p-4 shadow-[4px_4px_0_0_#FF4500] flex justify-between items-center font-display uppercase tracking-wider hover:scale-[1.02] transition-transform"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white text-black w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 border-black">
+                                    {cartCount}
+                                </div>
+                                <span>Ver Sacola</span>
+                            </div>
+                            <span>R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* BOTTOM NAV */}
+                {view !== 'landing' && (
+                    <nav className="fixed bottom-0 left-0 w-full bg-white border-t-2 border-black h-[70px] z-50 flex justify-around items-center pb-2">
+                        <button
+                            onClick={() => setView('home')}
+                            className={`flex flex-col items-center gap-1 w-full h-full justify-center ${view === 'home' || view === 'search' ? 'text-primary opacity-100' : 'opacity-40'}`}
+                        >
+                            <Home size={24} strokeWidth={view === 'home' ? 3 : 2} />
+                            <span className="font-display text-[10px] uppercase">Início</span>
+                        </button>
+                        <button
+                            onClick={() => setView('orders')}
+                            className={`flex flex-col items-center gap-1 w-full h-full justify-center ${view === 'orders' ? 'text-primary opacity-100' : 'opacity-40'}`}
+                        >
+                            <Receipt size={24} strokeWidth={view === 'orders' ? 3 : 2} />
+                            <span className="font-display text-[10px] uppercase">Pedidos</span>
+                        </button>
+                    </nav>
+                )}
+
+                {/* TOAST */}
+                {showToast && (
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-black text-white border-2 border-success px-6 py-3 shadow-xl z-[70] flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+                        <CheckCircle className="text-success" size={20} />
+                        <span className="font-display text-sm">ITEM ADICIONADO!</span>
+                    </div>
+                )}
+
+                <ProductModal
+                    product={selectedProduct}
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onAdd={addToCart}
+                />
+
+            </div>
+        );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
 </body>
 </html>
